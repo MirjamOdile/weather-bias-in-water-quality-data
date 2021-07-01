@@ -18,8 +18,7 @@ library(naniar)
 # Specify root as path to 'Data' folder containing the lake data folder 
 # 'Great Pond Data'
 # Note: trailing slash required to join path, i.e. "path/to/folder/Data/"
-root <- '/Users/miri/OneDrive - University of Exeter/SharedSpace/JamesArticle/Data/'
-# root <-  '/Users/miri/WeatherBias/Data/'
+root <- '/home/mirjam/GitHub/weather-bias-in-water-quality-data/Data/'
 
 # Create new folders to save aggregated data
 dir.create(file.path(root, 'Data Cleaned'))

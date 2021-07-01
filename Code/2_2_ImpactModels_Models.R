@@ -15,14 +15,12 @@ library(lubridate) # dates
 library(gridExtra) # arrange ggplots on a grid
 library(fritools) # weighted variance
 
-# library(stringr)
-
-# Set the working directory
 
 # Specify root as path to 'Data Cleaned' folder containing the lake data folders 
 # 'Manual' and 'WeatherStation'
-root <- '/Users/miri/OneDrive - University of Exeter/SharedSpace/JamesArticle/Data/Data Cleaned/'
-# root <-  '/Users/miri/WeatherBias/Data/Data Cleaned/'
+root <- '/home/mirjam/GitHub/weather-bias-in-water-quality-data/Data/Data Cleaned/'
+
+# Set the working directory
 
 setwd(root)
 getwd()

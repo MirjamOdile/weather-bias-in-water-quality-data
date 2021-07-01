@@ -16,8 +16,7 @@ library(lubridate)
 # Specify root as path to 'Data' folder containing the lake data folders 
 # 'Great Pond Data' and 'Other lakes' 
 # Note: trailing slash required to join path, i.e. "path/to/folder/Data/"
-root <- '/Users/miri/OneDrive - University of Exeter/SharedSpace/JamesArticle/Data/'
-# root <-  '/Users/miri/WeatherBias/Data/'
+root <- '/home/mirjam/GitHub/weather-bias-in-water-quality-data/Data/'
 
 # Create new folders to save aggregated data
 dir.create(file.path(root, 'Data Cleaned'))
@@ -120,7 +119,7 @@ rm(data)
 
 
 # Set the working directory
-setwd(paste(root, 'Other lakes/Long Pond/All/', sep=""))
+setwd(paste(root, 'Other lakes/Long Pond/', sep=""))
 getwd()
 list.files()
 
@@ -205,7 +204,7 @@ rm(data)
 
 
 # Set the working directory
-setwd(paste(root, 'Other lakes/Messalonskee/All/', sep=""))
+setwd(paste(root, 'Other lakes/Messalonskee/', sep=""))
 getwd()
 list.files()
 
@@ -290,7 +289,7 @@ rm(data)
 
 # Set the working directory
 
-setwd(paste(root, 'Other lakes/East Pond/All/', sep=""))
+setwd(paste(root, 'Other lakes/East Pond/', sep=""))
 getwd()
 list.files()
 
@@ -366,7 +365,7 @@ rm(data)
 
 # Set the working directory
 
-setwd(paste(root, 'Other lakes/McGrath/All/', sep=""))
+setwd(paste(root, 'Other lakes/McGrath/', sep=""))
 getwd()
 list.files()
 
@@ -442,7 +441,7 @@ rm(data)
 
 # Set the working directory
 
-setwd(paste(root, 'Other lakes/North Pond/All/', sep=""))
+setwd(paste(root, 'Other lakes/North Pond/', sep=""))
 getwd()
 list.files()
 
@@ -518,7 +517,7 @@ rm(data)
 
 # Set the working directory
 
-setwd(paste(root, 'Other lakes/Salmon/All/', sep=""))
+setwd(paste(root, 'Other lakes/Salmon/', sep=""))
 getwd()
 list.files()
 
