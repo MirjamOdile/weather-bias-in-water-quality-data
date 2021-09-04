@@ -899,3 +899,168 @@ stargazer(logit1, logit2, logit2, type = 'latex',
           notes = '1 ‘ ’ 0.1 ‘.’ 0.05 ‘*’ 0.01 ‘**’ 0.001 ‘***’ 0',
           notes.append = FALSE
           )
+
+
+###########################################
+###   Combined Effects Plot             ###
+###########################################
+
+library(gridExtra)
+
+### Standard model ###
+p11 <- plot_model(logit1, type = "eff", terms = "airtemp.mean")
+p21 <- plot_model(logit1, type = "eff", terms = "windspeed.mean [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7]")
+p31 <- plot_model(logit1, type = "eff", terms = "rain.mean [0, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.325, 0.35, 0.375, 0.4, 0.425, 0.45, 0.475, 0.5, 0.525, 0.55, 0.575, 0.6]")
+p41 <- plot_model(logit1, type = "eff", terms = "wday")
+grid.arrange(p11, p21, p31, p41)
+
+### LDV Model ###
+p12 <- plot_model(logit2, type = "eff", terms = "airtemp.mean")
+p22 <- plot_model(logit2, type = "eff", terms = "windspeed.mean [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7]")
+p32 <- plot_model(logit2, type = "eff", terms = "rain.mean [0, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.325, 0.35, 0.375, 0.4, 0.425, 0.45, 0.475, 0.5, 0.525, 0.55, 0.575, 0.6]")
+p42 <- plot_model(logit2, type = "eff", terms = "wday")
+grid.arrange(p12, p22, p32, p42)
+
+# Load msm for deltamethod function.
+library(msm)
+
+# Effects plot for GLARMA model.
+# get coefficients and covariance.
+beta_arma <- summary(mod_arma)$coefficients1$Estimate
+cov_arma <- mod_arma$cov[1:5,1:5]
+t.crit <- qt(0.975, length(mod_arma$residuals) - 2)
+
+# Get the means of each predictor.
+airtemp.mean <- mean(data$airtemp.mean)
+windspeed.mean <- mean(data$windspeed.mean)
+rain.mean <- mean(data$rain.mean)
+wday.mean <- mean(data$wday.numeric)
+
+### Air temperature ###
+# Points to evaluate (extract from effects plot)
+airtemp.x <- p11$data$x
+# get the raw (untransformed) prediction
+airtemp.y_raw <- beta_arma[1] + airtemp.x*beta_arma[2] + windspeed.mean*beta_arma[3] + rain.mean*beta_arma[4] + wday.mean*beta_arma[5]
+# transform with logistic function.
+airtemp.y <- exp(airtemp.y_raw)/(1+exp(airtemp.y_raw))
+
+# set an empty vector for the standard errors and evaluate for each point.
+airtemp.se = numeric(length(airtemp.x))
+for (i in 1:length(airtemp.x)) {
+  x = airtemp.x[i]
+  airtemp.se[i] <- deltamethod(~ exp(x1 + x2*x + x3*windspeed.mean + x4*rain.mean + x5*wday.mean)/
+                                 (1 + exp(x1 + x2*x + x3*windspeed.mean + x4*rain.mean + x5*wday.mean)), 
+                               beta_arma, cov_arma)
+}
+
+# create confidence intervals.
+airtemp.y.lo <- airtemp.y - t.crit*airtemp.se; airtemp.y.lo[airtemp.y.lo<0] = 0
+airtemp.y.hi <- airtemp.y + t.crit*airtemp.se
+
+# collect everything in a tibble (dataframe), including the other models.
+airtemp.data <- tibble(airtemp.x, 
+                       p11$data$predicted, p11$data$conf.low, p11$data$conf.high,
+                       p12$data$predicted, p12$data$conf.low, p12$data$conf.high,
+                       airtemp.y, airtemp.y.lo, airtemp.y.hi)
+
+# make the plot.
+airtemp_plot <- airtemp.data %>% ggplot(aes(airtemp.x)) +
+  geom_ribbon(aes(ymin=p11$data$conf.low, ymax=p11$data$conf.high), fill='goldenrod', alpha=0.1) + 
+  geom_line(aes(y=p11$data$predicted, colour='Standard')) +
+  geom_ribbon(aes(ymin=p12$data$conf.low, ymax=p12$data$conf.high), fill='darkorchid', alpha=0.1) + 
+  geom_line(aes(y=p12$data$predicted, colour='LDV')) +
+  geom_ribbon(aes(ymin=airtemp.y.lo, ymax=airtemp.y.hi), fill='limegreen', alpha=0.1) + 
+  geom_line(aes(y=airtemp.y, colour='GLARMA')) +
+  xlab('Mean Air Temperature (°C)') +
+  ylab('E(Y|x)') + 
+  scale_colour_manual(name = element_blank(), 
+                      breaks = c('Standard', 'LDV', 'GLARMA'),
+                      values =c('Standard'='goldenrod', 'LDV'='darkorchid', 'GLARMA'='limegreen')) +
+  theme(panel.grid=element_blank(), 
+        legend.background = element_rect(fill="transparent"),
+        legend.position='top',
+        legend.text=element_text(size=11))
+
+### Wind speed ###
+# Points to evaluate (extract from effects plot)
+windspeed.x <- p21$data$x
+# get the raw (untransformed) prediction
+windspeed.y_raw <- beta_arma[1] + airtemp.mean*beta_arma[2] + windspeed.x*beta_arma[3] + rain.mean*beta_arma[4] + wday.mean*beta_arma[5]
+# transform with logistic function.
+windspeed.y <- exp(windspeed.y_raw)/(1+exp(windspeed.y_raw))
+
+# set an empty vector for the standard errors and evaluate for each point.
+windspeed.se = numeric(length(windspeed.x))
+for (i in 1:length(windspeed.x)) {
+  x = windspeed.x[i]
+  windspeed.se[i] <- deltamethod(~ exp(x1 + x2*airtemp.mean + x3*x + x4*rain.mean + x5*wday.mean)/
+                                   (1 + exp(x1 + x2*airtemp.mean + x3*x + x4*rain.mean + x5*wday.mean)), 
+                                 beta_arma, cov_arma)
+}
+
+# create confidence intervals.
+windspeed.y.lo <- windspeed.y - t.crit*windspeed.se; windspeed.y.lo[windspeed.y.lo<0] = 0
+windspeed.y.hi <- windspeed.y + t.crit*windspeed.se
+
+# collect everything in a tibble (dataframe), including the other models.
+windspeed.data <- tibble(windspeed.x, 
+                         p21$data$predicted, p21$data$conf.low, p21$data$conf.high,
+                         p22$data$predicted, p22$data$conf.low, p22$data$conf.high,
+                         windspeed.y, windspeed.y.lo, windspeed.y.hi)
+
+# make the plot.
+windspeed_plot <- windspeed.data %>% ggplot(aes(windspeed.x)) +
+  geom_ribbon(aes(ymin=p21$data$conf.low, ymax=p21$data$conf.high), fill='goldenrod', alpha=0.1) + 
+  geom_line(aes(y=p21$data$predicted), colour='goldenrod') +
+  geom_ribbon(aes(ymin=p22$data$conf.low, ymax=p22$data$conf.high), fill='darkorchid', alpha=0.1) + 
+  geom_line(aes(y=p22$data$predicted), colour='darkorchid') +
+  geom_ribbon(aes(ymin=windspeed.y.lo, ymax=windspeed.y.hi), fill='limegreen', alpha=0.1) + 
+  geom_line(aes(y=windspeed.y), colour='limegreen') +
+  xlab('Mean Wind Speed (m/s)') +
+  ylab('E(Y|x)') +
+  ylim(0, 0.6) +
+  theme(panel.grid=element_blank(), legend.position="none")
+
+### Rain intensity ###
+# Points to evaluate (extract from effects plot)
+rain.x <- p31$data$x
+# get the raw (untransformed) prediction
+rain.y_raw <- beta_arma[1] + airtemp.mean*beta_arma[2] + windspeed.mean*beta_arma[3] + rain.x*beta_arma[4] + wday.mean*beta_arma[5]
+# transform with logistic function.
+rain.y <- exp(rain.y_raw)/(1+exp(rain.y_raw))
+
+# set an empty vector for the standard errors and evaluate for each point.
+rain.se = numeric(length(rain.x))
+for (i in 1:length(rain.x)) {
+  x = rain.x[i]
+  rain.se[i] <- deltamethod(~ exp(x1 + x2*airtemp.mean + x3*windspeed.mean + x4*x + x5*wday.mean)/
+                              (1 + exp(x1 + x2*airtemp.mean + x3*windspeed.mean + x4*x + x5*wday.mean)), 
+                            beta_arma, cov_arma)
+}
+
+# create confidence intervals.
+rain.y.lo <- rain.y - t.crit*rain.se; rain.y.lo[rain.y.lo<0] = 0
+rain.y.hi <- rain.y + t.crit*rain.se
+
+# collect everything in a tibble (dataframe), including the other models.
+rain.data <- tibble(rain.x, 
+                    p31$data$predicted, p31$data$conf.low, p31$data$conf.high,
+                    p32$data$predicted, p32$data$conf.low, p32$data$conf.high,
+                    rain.y, rain.y.lo, rain.y.hi)
+
+# make the plot.
+rain_plot <- rain.data %>% ggplot(aes(rain.x)) +
+  geom_ribbon(aes(ymin=p31$data$conf.low, ymax=p31$data$conf.high), fill='goldenrod', alpha=0.1) + 
+  geom_line(aes(y=p31$data$predicted), colour='goldenrod') +
+  geom_ribbon(aes(ymin=p32$data$conf.low, ymax=p32$data$conf.high), fill='darkorchid', alpha=0.1) + 
+  geom_line(aes(y=p32$data$predicted), colour='darkorchid') +
+  geom_ribbon(aes(ymin=rain.y.lo, ymax=rain.y.hi), fill='limegreen', alpha=0.1) + 
+  geom_line(aes(y=rain.y), colour='limegreen') +
+  xlab('Mean Rainfall Intensity (mm/15min)') +
+  ylab('E(Y|x)') +
+  ylim(0, 0.6) +
+  theme(panel.grid=element_blank(), legend.position="none")
+
+# put all effect plots in a grid.
+grid.arrange(airtemp_plot, windspeed_plot, rain_plot, heights=c(39, 31, 31))
+
