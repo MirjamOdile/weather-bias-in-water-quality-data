@@ -204,7 +204,7 @@ for (i in 1:length(depths)){
   print(all_tests[[i]])
 }
 
-# Using only daytime tempwratures to compare.
+# Using only daytime temperatures to compare.
 automatic_day <- automatic %>% filter(Time >= hms::as_hms('08:00:00'), 
                                       Time <= hms::as_hms('16:00:00'))
 
@@ -229,13 +229,64 @@ for (i in 1:length(depths)){
   print(all_tests[[i]])
 }
 
+#------------------------------------------------#
+#  Match the automatic and manual sampling days  #
+#------------------------------------------------#
+
+matched.automatic <- subset(automatic, Date %in% manual$Date)
+length(unique(matched.automatic$Date)) # 46 matches
+matched.manual <- subset(manual, Date %in% automatic$Date)
+length(unique(matched.manual$Date)) # 46 matches
+# >> On 46 days, both automatic and manual sampling took place.
+
+#---------------------------------------------------------------------#
+#  Aggregate and merge the matched automatic and manual measurements  #
+#---------------------------------------------------------------------#
+
+# Aggregate the matched automatic measurements by date and depth.
+matched.automatic.agg <- matched.automatic %>% group_by(Date, Depth) %>%
+  summarise(Temp.automatic.mean = mean(Temp, na.rm = T),
+            Temp.automatic.var = var(Temp, na.rm = T))
+dim(matched.automatic.agg)
+
+# Aggregate the matched manual measurements by date and depth.
+# Calculate the weighted mean and variance (weighted by proximity to the 
+# specified depths, i.e. the closer the higher weighted).
+matched.manual.agg <- matched.manual %>% group_by(Date, Depth) %>%
+  summarise(Temp.manual.mean = mean(Temp),
+            Temp.manual.var = var(Temp), 
+            Temp.manual.mean.weighted = weighted.mean(Temp, Weights),
+            Temp.manual.var.weighted = weighted_variance(Temp, Weights))
+dim(matched.manual.agg)
+
+# Merge the matched and aggregated data
+paired <- merge(matched.automatic.agg, matched.manual.agg,
+                by = c('Date', 'Depth'))
+paired %>% group_by(Depth) %>% 
+  summarise(n = n()) %>% summarise(c = sum(n))
+
+dim(paired)
+rm(matched.automatic.agg, matched.manual.agg)
+
+### Try to correct for the thermocline bias.
+differences <- paired %>% group_by(Depth) %>%
+  summarise(Diff = t.test(Temp.manual.mean.weighted, Temp.automatic.mean, paired = T)$estimate[[1]],
+            CI_lo = t.test(Temp.manual.mean.weighted, Temp.automatic.mean, paired = T)$conf.int[1],
+            CI_hi = t.test(Temp.manual.mean.weighted,  Temp.automatic.mean, paired = T)$conf.int[2],
+            t = t.test(Temp.manual.mean.weighted,  Temp.automatic.mean, paired = T)$statistic[[1]],
+            df = t.test(Temp.manual.mean.weighted,  Temp.automatic.mean, paired = T)$parameter[[1]],
+            p = t.test(Temp.manual.mean.weighted, Temp.automatic.mean, paired = T)$p.value[[1]])
+
+#library(stargazer)
+#stargazer(as.data.frame(differences), summary=F, rownames=F)
+
+manual <- manual %>%
+  rowwise() %>%
+  mutate(Temp_corrected = Temp-differences$Diff[differences$Depth==Depth])
+
 # Get the means per depth.for all the datasets.
 # All automatic samples
 automatic_means <- automatic %>% group_by(Depth) %>%
-  summarize(mean=mean(Temp))
-
-# Daytime automatic samples.
-automatic_day_means <- automatic_day %>% group_by(Depth) %>%
   summarize(mean=mean(Temp))
 
 # Automatic samples during manual samples.
@@ -246,11 +297,15 @@ automatic_subsets_means <- automatic_subset %>% group_by(Depth) %>%
 manual_means <- manual %>% group_by(Depth) %>%
   summarize(mean=mean(Temp))
 
+# Manual samples.
+manual_corrected_means <- manual %>% group_by(Depth) %>%
+  summarize(mean=mean(Temp_corrected))
+
 # Plug all the means together in a dataframe.
 comparison <- bind_rows('automatic'=automatic_means, 
-                        'automatic (day)'=automatic_day_means, 
                         'automatic (subset)'=automatic_subsets_means, 
                         'manual'=manual_means, 
+                        'manual (corrected)'=manual_corrected_means, 
                         .id='dataset')
 
 # Plot that dataframe
