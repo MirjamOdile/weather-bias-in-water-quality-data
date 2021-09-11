@@ -130,8 +130,8 @@ for (i in 2:nrow(manual)){
 # Summarise the series to get start and stop times.
 manual_times <- manual %>%
   group_by(Series) %>%
-  summarize(start = min(Datetime),
-            stop = max(Datetime))
+  summarize(start = min(Datetime) - dminutes(0),
+            stop = max(Datetime) + dminutes(0))
 
 # Subset the automatic measurements to coincide with the manual ones.
 # First manual series
@@ -143,14 +143,13 @@ for (i in 2:nrow(manual_times)){
                                                      Datetime <=  manual_times[i,]$stop))
 }
 
-#automatic_subset <- automatic %>%
-#  filter(Date %in% unique(manual$Date))
+automatic_subset
 
 # Plot it.
 hist1 <- ggplot(automatic_subset, aes(Temp)) + 
-  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5, bins=50) + 
+  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5) + 
   geom_density(color='orangered', size=1, bw=1) +
-  geom_histogram(data=automatic, aes(y=..density..), fill='steelblue1', alpha=0.5, bins=50) +
+  geom_histogram(data=automatic, aes(y=..density..), fill='steelblue1', alpha=0.5) +
   geom_density(data=automatic, color='steelblue1', size=1, bw=1) +
   scale_y_continuous(breaks=c(0.1, 0.2)) +
   ggtitle('All measurement depths') +
@@ -159,9 +158,9 @@ hist1 <- ggplot(automatic_subset, aes(Temp)) +
        y = 'Density')
 
 hist2 <- ggplot(filter(automatic_subset, Depth<=8), aes(Temp)) + 
-  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5, bins=50) + 
+  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5) + 
   geom_density(color='orangered', size=1, bw=1) +
-  geom_histogram(data=filter(automatic, Depth<=7), aes(y=..density..), fill='steelblue1', alpha=0.5, bins=50) +
+  geom_histogram(data=filter(automatic, Depth<=7), aes(y=..density..), fill='steelblue1', alpha=0.5) +
   geom_density(data=filter(automatic, Depth<=7), color='steelblue1', size=1, bw=1) +
   scale_y_continuous(breaks=c(0.1, 0.2)) +
   ggtitle('Measurement Depths 0-8m') +
@@ -170,9 +169,9 @@ hist2 <- ggplot(filter(automatic_subset, Depth<=8), aes(Temp)) +
        y = 'Density')
 
 hist3 <- ggplot(filter(automatic_subset, Depth>8),aes(Temp)) + 
-  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5, bins=50) + 
+  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5) + 
   geom_density(color='orangered', size=1, bw=1) +
-  geom_histogram(data=filter(automatic, Depth>7), aes(y=..density..), fill='steelblue1', alpha=0.5, bins=50) +
+  geom_histogram(data=filter(automatic, Depth>7), aes(y=..density..), fill='steelblue1', alpha=0.5) +
   geom_density(data=filter(automatic, Depth>7), color='steelblue1', size=1, bw=1) +
   ggtitle('Measurement Depths 8-20m') +
   theme(plot.title = element_text(size = 10)) +
@@ -200,31 +199,6 @@ depths = unique(automatic_subset$Depth)
 all_tests <- vector('list', length(depths))
 for (i in 1:length(depths)){
   all_tests[[i]] <- t.test(automatic_subset$Temp[automatic_subset$Depth == depths[i]], automatic$Temp[automatic$Depth == depths[i]])
-  print(depths[i])
-  print(all_tests[[i]])
-}
-
-# Using only daytime temperatures to compare.
-automatic_day <- automatic %>% filter(Time >= hms::as_hms('08:00:00'), 
-                                      Time <= hms::as_hms('16:00:00'))
-
-# All depths
-t.test(automatic_subset$Temp, automatic_day$Temp)
-# >> Statistically significant difference in means.
-
-# 1-7m
-t.test(automatic_subset$Temp[automatic_subset$Depth <= 7], automatic_day$Temp[automatic_day$Depth <= 7])
-# >> Statistically significant difference in means.
-
-# 9-19m
-t.test(automatic_subset$Temp[automatic_subset$Depth > 7], automatic_day$Temp[automatic_day$Depth > 7])
-# >> Statistically significant difference in means.
-
-# Do tests for all depths
-depths = unique(automatic_subset$Depth)
-all_tests <- vector('list', length(depths))
-for (i in 1:length(depths)){
-  all_tests[[i]] <- t.test(automatic_subset$Temp[automatic_subset$Depth == depths[i]], automatic_day$Temp[automatic_day$Depth == depths[i]])
   print(depths[i])
   print(all_tests[[i]])
 }
@@ -316,4 +290,47 @@ comparison %>% ggplot(aes(Depth, mean, color=dataset)) +
   coord_flip() +
   scale_color_brewer(palette="Paired") +
   theme(legend.title=element_blank(), legend.position="top")
+
+# Demonstrate that the mean temperatures are statistically the
+# same, whether using the entire day, or only 8 daytime hours.
+
+# Using only daytime temperatures to compare.
+automatic_day <- automatic %>% filter(Time >= hms::as_hms('08:00:00'), 
+                                      Time <= hms::as_hms('16:00:00'))
+
+# All depths
+t.test(automatic_subset$Temp, automatic_day$Temp)
+# >> Statistically significant difference in means.
+
+# 1-7m
+t.test(automatic_subset$Temp[automatic_subset$Depth <= 7], automatic_day$Temp[automatic_day$Depth <= 7])
+# >> Statistically significant difference in means.
+
+# 9-19m
+t.test(automatic_subset$Temp[automatic_subset$Depth > 7], automatic_day$Temp[automatic_day$Depth > 7])
+# >> Statistically significant difference in means.
+
+# Do tests for all depths
+depths = unique(automatic_subset$Depth)
+all_tests <- vector('list', length(depths))
+for (i in 1:length(depths)){
+  all_tests[[i]] <- t.test(automatic_subset$Temp[automatic_subset$Depth == depths[i]], automatic_day$Temp[automatic_day$Depth == depths[i]])
+  print(depths[i])
+  print(all_tests[[i]])
+}
+
+means_24h <- automatic %>%
+  group_by(Date, Depth) %>%
+  summarise(Temp.mean = mean(Temp))
+
+means_8h <- automatic_day %>%
+  group_by(Date, Depth) %>%
+  summarise(Temp.mean.day = mean(Temp))
+
+means_all <- right_join(means_24h, means_8h)
+
+means_all %>% ggplot(aes(Temp.mean, Temp.mean.day)) +
+  geom_point() + 
+  geom_smooth(method='lm') +
+  ggpubr::stat_cor(method="pearson")
 
