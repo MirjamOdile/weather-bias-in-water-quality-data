@@ -276,19 +276,25 @@ manual_corrected_means <- manual %>% group_by(Depth) %>%
   summarize(mean=mean(Temp_corrected))
 
 # Plug all the means together in a dataframe.
-comparison <- bind_rows('automatic'=automatic_means, 
-                        'automatic (subset)'=automatic_subsets_means, 
-                        'manual'=manual_means, 
-                        'manual (corrected)'=manual_corrected_means, 
-                        .id='dataset')
+comparison <- bind_rows('Automatic'=automatic_means, 
+                        'Manual (emulated)'=automatic_subsets_means, 
+                        'Manual (actual)'=manual_means, 
+                        'Manual (sensor lag corrected)'=manual_corrected_means, 
+                        .id='dataset') %>%
+  mutate(dataset = factor(dataset, levels=c('Automatic', 'Manual (emulated)', 'Manual (actual)', 'Manual (sensor lag corrected)')))
 
+library(RColorBrewer)
 # Plot that dataframe
-comparison %>% ggplot(aes(Depth, mean, color=dataset)) +
-  geom_point() +
-  ylab('Mean Temperature') +
+comparison %>% 
+  #mutate(dataset_plotting = factor(dataset, levels = c('Automatic', 'Automatic (subset)', 'Dummy_1', 'Dummy_2', 'Manual', 'Manual (corrected)'))) %>%
+  ggplot(aes(Depth, mean, color=dataset)) +
+  geom_point(size=2) +
+  xlab('Depth (m)') +
+  ylab('Mean Temperature (°C)') +
   scale_x_reverse() +
   coord_flip() +
-  scale_color_brewer(palette="Paired") +
+  #scale_shape_manual(values = c(15,15,19,19)) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[c(5,6,1,2)]) +
   theme(legend.title=element_blank(), legend.position="top")
 
 # Demonstrate that the mean temperatures are statistically the
@@ -330,7 +336,12 @@ means_8h <- automatic_day %>%
 means_all <- right_join(means_24h, means_8h)
 
 means_all %>% ggplot(aes(Temp.mean, Temp.mean.day)) +
-  geom_point() + 
-  geom_smooth(method='lm') +
-  ggpubr::stat_cor(method="pearson")
+  geom_point(aes(color=as.factor(Depth))) + 
+  geom_abline(color='white', size=2) +
+  geom_abline(color='black', size=1) +
+  ggpubr::stat_cor(method="pearson") +
+  scale_colour_viridis_d(option = 'plasma', end = 0.8, direction = -1) +
+  guides(color=guide_legend(title="Depth")) +
+  ylab('Mean temperature (8 hours, daytime)') +
+  xlab('Mean temperature (24 hours)')
 
