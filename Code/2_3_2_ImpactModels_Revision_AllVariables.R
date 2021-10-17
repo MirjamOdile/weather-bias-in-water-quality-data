@@ -19,7 +19,7 @@ library(fritools) # weighted variance
 # Specify root as path to 'Data Cleaned' folder containing the lake data folders 
 # 'Manual' and 'WeatherStation'
 root <- '/home/mirjam/GitHub/weather-bias-in-water-quality-data/Data/Data Cleaned/'
-root <- '/home/mikkel/OneDrive/Projects/WeatherBiasArticle/Data/Data Cleaned'
+root <- '/home/mikkel/OneDrive/Projects/WeatherBiasArticle/weather-bias-in-water-quality-data/Data/Data Cleaned/'
 
 # Set the working directory
 

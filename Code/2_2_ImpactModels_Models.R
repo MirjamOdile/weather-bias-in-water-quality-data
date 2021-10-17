@@ -19,6 +19,7 @@ library(fritools) # weighted variance
 # Specify root as path to 'Data Cleaned' folder containing the lake data folders 
 # 'Manual' and 'WeatherStation'
 root <- '/home/mirjam/GitHub/weather-bias-in-water-quality-data/Data/Data Cleaned/'
+root <- '/home/mikkel/OneDrive/Projects/WeatherBiasArticle/weather-bias-in-water-quality-data/Data/Data Cleaned/'
 
 # Set the working directory
 
@@ -247,7 +248,7 @@ hist1 <- ggplot(paired) +
   geom_density(aes(x=Temp.manual.mean.weighted), color='orangered', size=1, bw=1) +
   geom_histogram(aes(x=Temp.automatic.mean, y=..density..), fill='steelblue1', alpha=0.5) +
   geom_density(aes(x=Temp.automatic.mean), color='steelblue1', size=1, bw=1) +
-  scale_y_continuous(breaks=c(0.1, 0.2)) +
+  scale_y_continuous(breaks=c(0.0, 0.1, 0.2)) +
   ggtitle('All measurement depths') +
   theme(plot.title = element_text(size = 10)) +
   labs(x = element_blank(),
@@ -258,7 +259,7 @@ hist2 <- ggplot(filter(paired, Depth<=7)) +
   geom_density(aes(x=Temp.manual.mean.weighted), color='orangered', size=1, bw=1) +
   geom_histogram(aes(x=Temp.automatic.mean, y=..density..), fill='steelblue1', alpha=0.5) +
   geom_density(aes(x=Temp.automatic.mean), color='steelblue1', size=1, bw=1) +
-  scale_y_continuous(breaks=c(0.1, 0.2)) +
+  scale_y_continuous(breaks=c(0.0, 0.1, 0.2)) +
   ggtitle('Measurement Depths 1-7m') +
   theme(plot.title = element_text(size = 10)) +
   labs(x = element_blank(),
@@ -474,7 +475,7 @@ hist1 <- ggplot(manual, aes(Temp_corrected)) +
   geom_density(color='orangered', size=1, bw=1) +
   geom_histogram(data=automatic, aes(x=Temp, y=..density..), fill='steelblue1', alpha=0.5) +
   geom_density(data=automatic, aes(x=Temp), color='steelblue1', size=1, bw=1) +
-  scale_y_continuous(breaks=c(0.1, 0.2)) +
+  scale_y_continuous(breaks=c(0.0, 0.1, 0.2)) +
   ggtitle('All measurement depths') +
   theme(plot.title = element_text(size = 10)) +
   labs(x = element_blank(),
@@ -485,7 +486,7 @@ hist2 <- ggplot(filter(manual, Depth<=8), aes(Temp_corrected)) +
   geom_density(color='orangered', size=1, bw=1) +
   geom_histogram(data=filter(automatic, Depth<=7), aes(x=Temp, y=..density..), fill='steelblue1', alpha=0.5) +
   geom_density(data=filter(automatic, Depth<=7), aes(x=Temp), color='steelblue1', size=1, bw=1) +
-  scale_y_continuous(breaks=c(0.1, 0.2)) +
+  scale_y_continuous(breaks=c(0.0, 0.1, 0.2)) +
   ggtitle('Measurement Depths 0-8m') +
   theme(plot.title = element_text(size = 10)) +
   labs(x = element_blank(),
