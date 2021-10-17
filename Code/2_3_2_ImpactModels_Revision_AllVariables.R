@@ -145,6 +145,8 @@ for (i in 2:nrow(manual_times)){
                                                      Datetime <=  manual_times[i,]$stop))
 }
 
+#automatic_remaining <- setdiff(automatic, automatic_subset)
+
 test_vars <- c(colnames(automatic)[5:20])
 
 diff <- vector('numeric', length(test_vars))
@@ -155,10 +157,11 @@ df <- vector('numeric', length(test_vars))
 p <- vector('numeric', length(test_vars))
 
 for (i in 1:length(test_vars)){
-  test <- t.test(automatic_subset[[test_vars[i]]], automatic[[test_vars[i]]])
-  diff[i] <- test$estimate[1]-test$estimate[2]
-  CI_lo[i] <- test$conf.int[1]
-  CI_hi[i] <- test$conf.int[2]
+  mu <- mean(automatic[[test_vars[i]]], na.rm=T)
+  test <- t.test(automatic_subset[[test_vars[i]]], mu=mu)
+  diff[i] <- test$estimate[1]-mu
+  CI_lo[i] <- test$conf.int[1]-mu
+  CI_hi[i] <- test$conf.int[2]-mu
   t[i] <- test$statistic
   df[i] <- test$parameter
   p[i] <- test$p.value
@@ -167,5 +170,7 @@ for (i in 1:length(test_vars)){
 all_tests <- tibble(test_vars, diff, CI_lo, CI_hi, t, df, p)
 
 library(knitr)
+kable(all_tests, digits=3,
+      col.names=c('Variable', 'mu_diff', 'CI (low)', 'CI (high)', 't', 'df', 'p'))
 kable(all_tests, format='latex', booktabs=T, digits=3,
       col.names=c('Variable', 'mu_diff', 'CI (low)', 'CI (high)', 't', 'df', 'p'))

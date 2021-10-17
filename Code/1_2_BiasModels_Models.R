@@ -966,16 +966,22 @@ airtemp.data <- tibble(airtemp.x,
 # make the plot.
 airtemp_plot <- airtemp.data %>% ggplot(aes(airtemp.x)) +
   geom_ribbon(aes(ymin=p11$data$conf.low, ymax=p11$data$conf.high), fill='goldenrod', alpha=0.1) + 
-  geom_line(aes(y=p11$data$predicted, colour='Standard')) +
+  geom_line(aes(y=p11$data$predicted, colour='Standard', linetype='Standard', size='Standard')) +
   geom_ribbon(aes(ymin=p12$data$conf.low, ymax=p12$data$conf.high), fill='darkorchid', alpha=0.1) + 
-  geom_line(aes(y=p12$data$predicted, colour='LDV')) +
+  geom_line(aes(y=p12$data$predicted, colour='LDV', linetype='LDV', size='LDV')) +
   geom_ribbon(aes(ymin=airtemp.y.lo, ymax=airtemp.y.hi), fill='limegreen', alpha=0.1) + 
-  geom_line(aes(y=airtemp.y, colour='GLARMA')) +
+  geom_line(aes(y=airtemp.y, colour='GLARMA', linetype='GLARMA', size='GLARMA')) +
   xlab('Mean Air Temperature (°C)') +
   ylab('E(Y|x)') + 
   scale_colour_manual(name = element_blank(), 
                       breaks = c('Standard', 'LDV', 'GLARMA'),
                       values =c('Standard'='goldenrod', 'LDV'='darkorchid', 'GLARMA'='limegreen')) +
+  scale_linetype_manual(name = element_blank(), 
+                      breaks = c('Standard', 'LDV', 'GLARMA'),
+                      values =c('Standard'='dotted', 'LDV'='dashed', 'GLARMA'='solid')) +
+  scale_size_manual(name = element_blank(), 
+                        breaks = c('Standard', 'LDV', 'GLARMA'),
+                        values =c('Standard'=0.8, 'LDV'=0.6, 'GLARMA'=0.5)) +
   theme(panel.grid=element_blank(), 
         legend.background = element_rect(fill="transparent"),
         legend.position='top',
@@ -1011,11 +1017,11 @@ windspeed.data <- tibble(windspeed.x,
 # make the plot.
 windspeed_plot <- windspeed.data %>% ggplot(aes(windspeed.x)) +
   geom_ribbon(aes(ymin=p21$data$conf.low, ymax=p21$data$conf.high), fill='goldenrod', alpha=0.1) + 
-  geom_line(aes(y=p21$data$predicted), colour='goldenrod') +
+  geom_line(aes(y=p21$data$predicted), colour='goldenrod', linetype='dotted', size=0.8) +
   geom_ribbon(aes(ymin=p22$data$conf.low, ymax=p22$data$conf.high), fill='darkorchid', alpha=0.1) + 
-  geom_line(aes(y=p22$data$predicted), colour='darkorchid') +
+  geom_line(aes(y=p22$data$predicted), colour='darkorchid', linetype='dashed', size=0.6) +
   geom_ribbon(aes(ymin=windspeed.y.lo, ymax=windspeed.y.hi), fill='limegreen', alpha=0.1) + 
-  geom_line(aes(y=windspeed.y), colour='limegreen') +
+  geom_line(aes(y=windspeed.y), colour='limegreen', linetype='solid') +
   xlab('Mean Wind Speed (m/s)') +
   ylab('E(Y|x)') +
   ylim(0, 0.6) +
@@ -1051,11 +1057,11 @@ rain.data <- tibble(rain.x,
 # make the plot.
 rain_plot <- rain.data %>% ggplot(aes(rain.x)) +
   geom_ribbon(aes(ymin=p31$data$conf.low, ymax=p31$data$conf.high), fill='goldenrod', alpha=0.1) + 
-  geom_line(aes(y=p31$data$predicted), colour='goldenrod') +
+  geom_line(aes(y=p31$data$predicted), colour='goldenrod', linetype='dotted', size=0.8) +
   geom_ribbon(aes(ymin=p32$data$conf.low, ymax=p32$data$conf.high), fill='darkorchid', alpha=0.1) + 
-  geom_line(aes(y=p32$data$predicted), colour='darkorchid') +
+  geom_line(aes(y=p32$data$predicted), colour='darkorchid', linetype='dashed', size=0.6) +
   geom_ribbon(aes(ymin=rain.y.lo, ymax=rain.y.hi), fill='limegreen', alpha=0.1) + 
-  geom_line(aes(y=rain.y), colour='limegreen') +
+  geom_line(aes(y=rain.y), colour='limegreen', linetype='solid') +
   xlab('Mean Rainfall Intensity (mm/15min)') +
   ylab('E(Y|x)') +
   ylim(0, 0.6) +
@@ -1063,4 +1069,3 @@ rain_plot <- rain.data %>% ggplot(aes(rain.x)) +
 
 # put all effect plots in a grid.
 grid.arrange(airtemp_plot, windspeed_plot, rain_plot, heights=c(39, 31, 31))
-
