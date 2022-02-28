@@ -1,7 +1,7 @@
 ### ----------------------------------
 ###                                                                          
 ### Weather Bias In Water Quality Data                           
-### Logistic regression models                                                                    
+### Bias Estimation, automatic vs. manual.                                                              
 ###
 ### Author: Mirjam Nanko
 ### Email: m.nanko@exeter.ac.uk

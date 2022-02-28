@@ -1,7 +1,7 @@
 ### ----------------------------------
 ###                                                                          
 ### Weather Bias In Water Quality Data                           
-### Logistic regression models                                                                    
+### Bias Estimation, automatic subset, temperature only.
 ###
 ### Author: Mirjam Nanko
 ### Email: m.nanko@exeter.ac.uk
@@ -63,7 +63,7 @@ length(unique(automatic$Date))
 #------------------#
 
 # Read in the manual sampling data.
-# Create a depth variable maytching the automatic measurements. 
+# Create a depth variable matching the automatic measurements. 
 # Specify weights to weigh samples depending on their proximity to the
 # specified depths.
 manual <- read.csv('GreatPond/GP_manual_2016-2019_temp_do.csv',
@@ -144,41 +144,6 @@ for (i in 2:nrow(manual_times)){
 }
 
 automatic_subset
-
-# Plot it.
-hist1 <- ggplot(automatic_subset, aes(Temp)) + 
-  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5) + 
-  geom_density(color='orangered', size=1, bw=1) +
-  geom_histogram(data=automatic, aes(y=..density..), fill='steelblue1', alpha=0.5) +
-  geom_density(data=automatic, color='steelblue1', size=1, bw=1) +
-  scale_y_continuous(breaks=c(0.1, 0.2)) +
-  ggtitle('All measurement depths') +
-  theme(plot.title = element_text(size = 10)) +
-  labs(x = element_blank(),
-       y = 'Density')
-
-hist2 <- ggplot(filter(automatic_subset, Depth<=8), aes(Temp)) + 
-  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5) + 
-  geom_density(color='orangered', size=1, bw=1) +
-  geom_histogram(data=filter(automatic, Depth<=7), aes(y=..density..), fill='steelblue1', alpha=0.5) +
-  geom_density(data=filter(automatic, Depth<=7), color='steelblue1', size=1, bw=1) +
-  scale_y_continuous(breaks=c(0.1, 0.2)) +
-  ggtitle('Measurement Depths 0-8m') +
-  theme(plot.title = element_text(size = 10)) +
-  labs(x = element_blank(),
-       y = 'Density')
-
-hist3 <- ggplot(filter(automatic_subset, Depth>8),aes(Temp)) + 
-  geom_histogram(aes(y=..density..), fill='orangered', alpha=0.5) + 
-  geom_density(color='orangered', size=1, bw=1) +
-  geom_histogram(data=filter(automatic, Depth>7), aes(y=..density..), fill='steelblue1', alpha=0.5) +
-  geom_density(data=filter(automatic, Depth>7), color='steelblue1', size=1, bw=1) +
-  ggtitle('Measurement Depths 8-20m') +
-  theme(plot.title = element_text(size = 10)) +
-  labs(x = 'Temperature (°C)',
-       y = 'Density')
-
-grid.arrange(hist1, hist2, hist3)
 
 ### Compare the subset with the full automatic dataset.
 
@@ -285,16 +250,17 @@ comparison <- bind_rows('Automatic'=automatic_means,
 
 library(RColorBrewer)
 # Plot that dataframe
-comparison %>% 
+comparison %>%
+  #filter(dataset %in% c('Automatic', 'Manual (emulated)', 'Manual (sensor lag corrected)')) %>%
   #mutate(dataset_plotting = factor(dataset, levels = c('Automatic', 'Automatic (subset)', 'Dummy_1', 'Dummy_2', 'Manual', 'Manual (corrected)'))) %>%
-  ggplot(aes(Depth, mean, color=dataset)) +
-  geom_point(size=2) +
+  ggplot(aes(Depth, mean, shape=dataset, color=dataset)) +
+  geom_point(size=1.8, stroke=1) +
   xlab('Depth (m)') +
   ylab('Mean Temperature (°C)') +
   scale_x_reverse() +
   coord_flip() +
-  #scale_shape_manual(values = c(15,15,19,19)) +
-  scale_colour_manual(values = brewer.pal(6, "Paired")[c(5,6,1,2)]) +
+  scale_shape_manual(values = c(2,17,1,19)) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[c(6,6,2,2)]) +
   theme(legend.title=element_blank(), legend.position="top")
 
 # Demonstrate that the mean temperatures are statistically the
@@ -325,6 +291,7 @@ for (i in 1:length(depths)){
   print(all_tests[[i]])
 }
 
+# Additional evidence that 24-hour means are equivalent of 8-hour means.
 means_24h <- automatic %>%
   group_by(Date, Depth) %>%
   summarise(Temp.mean = mean(Temp))

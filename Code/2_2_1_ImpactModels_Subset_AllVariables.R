@@ -1,7 +1,7 @@
 ### ----------------------------------
 ###                                                                          
 ### Weather Bias In Water Quality Data                           
-### Logistic regression models                                                                    
+### Bias Estimation, automatic subset, all variables.
 ###
 ### Author: Mirjam Nanko
 ### Email: m.nanko@exeter.ac.uk
@@ -46,9 +46,7 @@ automatic <- read.csv('GreatPond/GP_buoy_2016-2019_temp_do.csv',
 length(unique(automatic$Date))
 # >> Measurements from 430 automatic sampling days were loaded.
 
-# Gather automatic temperature measurements into long format
-#automatic <- gather(automatic[c(21, 7:10)],  "Depth", "DO", 2:5)
-#automatic$Depth <- as.numeric(str_extract(automatic$Depth, "\\d+"))
+# Extract date and compute PAR.
 automatic$Date <- as.Date(automatic$Datetime)
 automatic$Year <- year(automatic$Datetime)
 automatic$Time <- hms::as_hms(automatic$Datetime)
@@ -147,8 +145,10 @@ for (i in 2:nrow(manual_times)){
 
 #automatic_remaining <- setdiff(automatic, automatic_subset)
 
+# Get the variable names.
 test_vars <- c(colnames(automatic)[5:20])
 
+# Initialise empty vectors to holds the results.
 diff <- vector('numeric', length(test_vars))
 CI_lo <-  vector('numeric', length(test_vars))
 CI_hi <-  vector('numeric', length(test_vars))
@@ -156,6 +156,7 @@ t <- vector('numeric', length(test_vars))
 df <- vector('numeric', length(test_vars))
 p <- vector('numeric', length(test_vars))
 
+# Do all the tests.
 for (i in 1:length(test_vars)){
   mu <- mean(automatic[[test_vars[i]]], na.rm=T)
   test <- t.test(automatic_subset[[test_vars[i]]], mu=mu)
@@ -167,8 +168,10 @@ for (i in 1:length(test_vars)){
   p[i] <- test$p.value
 }
 
+# Plug the tests into a dataframe.
 all_tests <- tibble(test_vars, diff, CI_lo, CI_hi, t, df, p)
 
+# Export the dataframe to latex.
 library(knitr)
 kable(all_tests, digits=3,
       col.names=c('Variable', 'mu_diff', 'CI (low)', 'CI (high)', 't', 'df', 'p'))
